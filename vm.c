@@ -3,13 +3,13 @@
 #include "vm.h"
 #include "birchutils.h"
 
-VM *virtualmachine(Program pr, int16 progsz) {
+VM *virtualmachine() {
     VM *p;
     int16 size;
 
     assert((pr) && (progsz));
 
-    Program pp;
+    //Program *pp;
 
     size = $2 sizeof(struct s_vm);
     p = (VM *)malloc($i size);
@@ -18,15 +18,18 @@ VM *virtualmachine(Program pr, int16 progsz) {
         return (VM *)0;
     }
 
+    // refactor to make sure vm is on the stack and not heap
+    /*
     zero($1 p, size);
-    pp = (Program)malloc($i progsz);
+    pp = (Program *)malloc($i progsz);
     if (!pp) {
         free(p);
         errno = ErrMem;
         return (VM *)0;
     }
-    copy($1 pp, $1 pr, progsz);
+    copy(pp, pr, progsz);
     return p;
+    */
 
 }
 
@@ -44,31 +47,41 @@ int8 map(Opcode o){
     return ret; 
 }
 
-Program exampleprogram() {
+Program *exampleprogram() {
+    Program *prog;
+    Instruction *i1, *i2;
+    int16 s1, s2, sa1, progsz;
+    Args *a1;
 
-    int8 size;
-    //Program prog[2];
-    Instruction i1, i2;
+    s1 = map(mov);
+    s2 = map(nop);
 
-    size = map(mov);
-    i1 = (Instruction)malloc($i size);
-    if (!i1) {
-        errno = ErrMem;
-        return (Program)0;
+    i1 = (Instruction *)malloc($1 s1);
+    i2 = (Instruction *)malloc($1 s1);
+
+    assert(i1 && i2);
+
+    zero($1 i1, s1);
+    zero($1 i2, s2);
+
+    i1->o = mov;
+    sa1 = s1 - 1;    // everything is 1 byte in our "Program instructions"
+
+    if (s1) {
+        a1 = (Args *)malloc($1 sa1);
+        assert(a1);
+        zero(a1, sa1);
+        // this is how we are setting the mov instruction argument stirng
+        *a1    = 0x00;
+        *(a+1) = 0x05;
     }
-
-    size = map(nop);
-    i2 = (Instruction)malloc($i size);
-    if (!i2) {
-        errno = ErrMem;
-        return (Program)0;
-    }
-    Program prog = {i1, i2}; 
-    return prog;
+    progsz = s1 + s2;
+    prog = (Prog *)
+    
 }
 
 int main (int argc, char *argv[]){
-    Program prog;
+    Program *prog;
     VM *vm;
     int8 size;
     size = map(mov) + map(nop);
