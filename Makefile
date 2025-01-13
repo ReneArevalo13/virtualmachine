@@ -1,15 +1,9 @@
-flags=-02 -Wall -std=c2x
-ldflags = -lbu
 
-.PHONY: all clean
 
-all: clean vm
+.PHONY: vm clean
 
-vm: vm.o
-	cc $(flags) $^ -o $@ $(ldflags)
-
-vm.o: vm.c vm.h
-	cc $(flags) -c $<
+vm: vm.c birchutils.c
+	cc $(flags) -o $@ $^
 
 clean:
-	rm -f *.o vm
+	rm -f vm

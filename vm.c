@@ -7,7 +7,6 @@ VM *virtualmachine() {
     VM *p;
     int16 size;
 
-    assert((pr) && (progsz));
 
     //Program *pp;
 
@@ -17,6 +16,7 @@ VM *virtualmachine() {
         errno = ErrMem;
         return (VM *)0;
     }
+    zero($1 p, size);
 
     // refactor to make sure vm is on the stack and not heap
     /*
@@ -28,8 +28,10 @@ VM *virtualmachine() {
         return (VM *)0;
     }
     copy(pp, pr, progsz);
+       */
+
+//    printf("Virtual machine done\n");
     return p;
-    */
 
 }
 
@@ -47,17 +49,17 @@ int8 map(Opcode o){
     return ret; 
 }
 
-Program *exampleprogram() {
-    Program *prog;
+Program *exampleprogram(VM *vm) {
+    Program *p;
     Instruction *i1, *i2;
-    int16 s1, s2, sa1, progsz;
+    int16 s1, s2, sa1;
     Args *a1;
 
     s1 = map(mov);
     s2 = map(nop);
 
-    i1 = (Instruction *)malloc($1 s1);
-    i2 = (Instruction *)malloc($1 s1);
+    i1 = (Instruction *)malloc($i s1);
+    i2 = (Instruction *)malloc($i s1);
 
     assert(i1 && i2);
 
@@ -68,16 +70,30 @@ Program *exampleprogram() {
     sa1 = s1 - 1;    // everything is 1 byte in our "Program instructions"
 
     if (s1) {
-        a1 = (Args *)malloc($1 sa1);
+        a1 = (Args *)malloc($i sa1);
         assert(a1);
         zero(a1, sa1);
         // this is how we are setting the mov instruction argument stirng
         *a1    = 0x00;
-        *(a+1) = 0x05;
+        *(a1+1) = 0x05;
     }
-    progsz = s1 + s2;
-    prog = (Prog *)
-    
+
+
+    p = vm->m;   // going into the vm's memory and copying there
+    copy($1 p, $1 i1, 1);
+    p++;
+    if (a1) {
+        copy($1 p, $1 a1, sa1);
+        p += sa1;
+        free(a1);
+    }
+
+    i2->o = nop;
+    copy($1 p, $1 i2, 1);
+    free(i1);
+    free(i2);
+//    printf("end of example program\n");
+    return vm->m;
 }
 
 int main (int argc, char *argv[]){
@@ -86,9 +102,11 @@ int main (int argc, char *argv[]){
     int8 size;
     size = map(mov) + map(nop);
 
-    prog = exampleprogram();
-    printf("prog = %p\n", prog);
-    vm = virtualmachine(prog, size);
+    vm = virtualmachine();
     printf("vm = %p\n", vm);
+
+    prog = exampleprogram(vm);
+    printf("prog = %p\n", prog);
+    
     return 0;
 }
