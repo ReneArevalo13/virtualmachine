@@ -73,7 +73,7 @@ struct s_instruction {
 };
 typedef struct s_instruction Instruction;
 
-typedef int8 Memory[((unsigned int)(-1))];
+typedef int8 Memory[((int16)(-1))];
 typedef int8 Program;
 
 typedef Memory *Stack;
@@ -81,7 +81,7 @@ typedef Memory *Stack;
 struct s_vm {
     CPU c;
     Memory m;
-    Program *p;
+    int16 brk;
 };
 typedef struct s_vm VM;
 

@@ -90,10 +90,14 @@ Program *exampleprogram(VM *vm) {
 
     i2->o = nop;
     copy($1 p, $1 i2, 1);
+
+    vm->brk = (s1+sa1+s2);  // break line set to the offset of total progam size
+
     free(i1);
     free(i2);
-//    printf("end of example program\n");
-    return vm->m;
+
+    return (Program *)&vm->m;
+
 }
 
 int main (int argc, char *argv[]){
@@ -103,10 +107,12 @@ int main (int argc, char *argv[]){
     size = map(mov) + map(nop);
 
     vm = virtualmachine();
-    printf("vm = %p\n", vm);
+    printf("vm = %p (sz: %d)\n", vm, sizeof(VM));
 
     prog = exampleprogram(vm);
     printf("prog = %p\n", prog);
+
+    printhex($1 prog, (map(mov)+map(nop)), ' ');
     
     return 0;
 }
