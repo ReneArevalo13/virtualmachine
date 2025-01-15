@@ -10,8 +10,11 @@
 #include <errno.h>
 #include "birchutils.h"
 
-#define ErrMem 0x01
-#define NoArgs {0x00, 0x00}
+#define NoErr   0x00           // 00 00
+#define SysHlt  0x01           // 00 01
+#define ErrMem  0x02           // 00 10
+#define ErrSegv 0x04           // 01 00
+
 
 typedef unsigned char int8;
 typedef unsigned short int int16;
@@ -25,6 +28,14 @@ typedef unsigned long long int int64;
 #define $c (char *)
 #define $i (int)
 
+#define $ax ->c.r.ax
+#define $bx ->c.r.bx
+#define $cx ->c.r.cx
+#define $dx ->c.r.dx
+#define $sp ->c.r.sp
+#define $ip ->c.r.ip
+
+#define segfault(x)       error((x), ErrSegv)
 /*
    Will be making a 16 bit computer.
    16 bits gives us 65,536 memory addresses.
@@ -50,7 +61,8 @@ typedef struct s_registers Registers;
 
 enum e_opcode {
     mov = 0x01,
-    nop = 0x02
+    nop = 0x02,
+    hlt = 0x03
 };
 typedef enum e_opcode Opcode;
 
@@ -65,7 +77,7 @@ struct s_cpu {
 };
 typedef struct s_cpu CPU;
 
-typedef int8 Args;
+typedef int16 Args;
 
 struct s_instruction {
     Opcode o;
@@ -75,25 +87,32 @@ typedef struct s_instruction Instruction;
 
 typedef int8 Memory[((int16)(-1))];
 typedef int8 Program;
+typedef unsigned char Errorcode;
 
 typedef Memory *Stack;
 
 struct s_vm {
     CPU c;
     Memory m;
-    int16 brk;
+    int16 brk;   // break line between stack and code segment
 };
 typedef struct s_vm VM;
 
 static IM instrmap[] = {
     {mov, 0x03},
-    {nop, 0x01}
+    {nop, 0x01},
+    {hlt, 0x01}
 };
 #define IMs sizeof(instrmap) / sizeof(struct s_instrmap)
  Program *exampleprogram(VM *);
 
+void error(VM *, Errorcode);
+void execute(VM *); 
+void executeinstr(VM *, Instruction *);
 int8 map(Opcode); 
 VM *virtualmachine (void);
+
+void __mov(VM *, Opcode, Args, Args);
 
 int main (int, char**);
 
