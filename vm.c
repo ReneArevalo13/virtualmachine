@@ -2,6 +2,7 @@
 
 #include "vm.h"
 #include "birchutils.h"
+#include <string.h>
 
 VM *virtualmachine() {
     VM *p;
@@ -151,63 +152,77 @@ int8 map(Opcode o){
 Program *exampleprogram(VM *vm) {
     Program *p;
     Instruction *i1, *i2, *i3;
-    int16 s1, s2, s3, sa1;
+    int16 s1, s2, sa1;
     Args a1;
 
     a1 = 0;
     s1 = map(mov);
     s2 = map(nop);
-    s3 = map(hlt);
+    sa1 = s1 - 1;
 
+    p =  (Program *)malloc(s1+s2+sa1+s2);
     i1 = (Instruction *)malloc($i s1);
-    i2 = (Instruction *)malloc($i s2);
-    i3 = (Instruction *)malloc($i s3);
+    i2 = (Instruction *)malloc( s2);
+    i3 = (Instruction *)malloc( s2);
 
     assert(i1 && i2 && i3);
 
     zero($1 i1, s1);
     zero($1 i2, s2);
-    zero($1 i3, s3);
+    zero($1 i3, s2);
 
     i1->o = mov;
-    printf("I1 is : %d\n", i1->o);
-    sa1 = s1 - 1;    // everything is 1 byte in our "Program instructions"
+   // printf("I1 is : %d\n", i1->o);
+    //sa1 = s1 - 1;    // everything is 1 byte in our "Program instructions"
 
     if (s1) {
         // this is how we are setting the mov instruction argument stirng
-        a1    = 0x0007;
+        a1    = 0x0005;
     }
 
-
     p = vm->m;   // going into the vm's memory and copying there
-   // copy($1 p, $1 i1, 1);
+    printf("Beginning of program\n");
+    printf("P POINTS TO : %p\n", p);
+
+//    copy($1 p, $1 i1, 1);
+    memcpy(p, i1, 1);
     p++;
+    printf("First increment\n");
+    printf("P POINTS TO : %p\n", p);
 
     if (a1) {
-        copy($1 p, $1 &a1, sa1);
+//        copy($1 p, $1 &a1, sa1);
+        memcpy(p, &a1, sa1);
         p += sa1;
+        printf("Argument increment\n");
+        printf("P POINTS TO : %p\n", p);
     } 
 
     i2->o = nop;
-   // copy($1 p, $1 i2, 1);
-    printf("I2 is : %d\n", i2->o);
+//    copy($1 p, $1 i2, 1);
+    memcpy(p, i2, 1);
+ //   printf("I2 is : %d\n", i2->o);
 
-   // p += s2; 
+    p++;
+    printf("Increment after NOP\n");
+    printf("P POINTS TO : %p\n", p);
 
-    i3->o = 3;
-    copy($1 p, $1 i3, 1);
-
-    printf("I3 is : %d\n", i3->o);
+    i3->o = hlt;
+    memcpy(p, i3, 1);
+    
+    printf("P POINTS TO : %p\n", p);
 
     vm->brk = (s1+sa1+s2+s2);//break line set to the offset of progam size
     vm $ip = (Reg) vm->m;
+
     vm $sp = (Reg) -1;
 
     free(i1);
     free(i2);
-   // free(i3);
-    return (Program *)&vm->m;
+    free(i3);
 
+    printf("memory POINTS TO : %p\n", vm->m);
+    return (Program *)&vm->m;
 }
 
 int main (int argc, char *argv[]){
@@ -216,14 +231,13 @@ int main (int argc, char *argv[]){
     int8 size;
 
     vm = virtualmachine();
-    printf("vm = %p (sz: %d)\n", vm, sizeof(VM));
+  //  printf("vm = %p (sz: %d)\n", vm, sizeof(VM));
 
     prog = exampleprogram(vm);
     printf("prog = %p\n", prog);
 
    // execute(vm);
     printf("ax = %.04hx\n", $i vm $ax);
-    printf("map hlt : %d\n", map(hlt));
     printhex($1 prog, (map(mov) + map(nop) + map(hlt)), ' ');
     
     return 0;

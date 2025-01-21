@@ -3,7 +3,7 @@
 .PHONY: vm clean
 
 vm: vm.c birchutils.c
-	cc $(flags) -o $@ $^
+	cc vm.c birchutils.c -Wall -g -o vm	
 
 clean:
 	rm -f vm
