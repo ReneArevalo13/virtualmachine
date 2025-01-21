@@ -8,8 +8,6 @@ VM *virtualmachine() {
     VM *p;
     int16 size;
 
-    //Program *pp;
-
     size = $2 sizeof(struct s_vm);
     p = (VM *)malloc($i size);
     if (!p) {
@@ -46,21 +44,16 @@ void execute(VM *vm) {
     */
     // goin to use a break address: brkaddr
 
-    int count = 0;
    do {
         vm $ip += size;
         pp += size;
         ip.o = *pp;
-       // printf("CURRENT INSTRUCTION: %d\n", ip.o);
-        if ((int16)pp > (int16)brkaddr) {
+        if ((int16)pp > brkaddr) {
             segfault(vm);
         }
         size = map(ip.o);
-        printf("THE SIZE IS NOW: %d\n", size);
-        printf("EXECUTING INSTRUCTION\n");
         copy($1 &ip, $1 pp, size);
         executeinstr(vm, pp);
-        count++;
 
     } while(*pp != (Opcode)hlt);
    
@@ -69,8 +62,6 @@ void execute(VM *vm) {
 
 
 void __mov(VM *vm, Opcode o, Args a1, Args a2) {
-    printf("a1 is : %d\n", a1);
-    printf("a2 is : %d\n", a2);
     vm $ax = (Reg) a1;
     return;
 }
@@ -82,7 +73,6 @@ void executeinstr(VM *vm, Program *p) {
     a2 = 0;
 
     size = map(*p);
-    printf("size is %d\n", size);
     switch (size) {
         case 0:
             break;
@@ -92,14 +82,10 @@ void executeinstr(VM *vm, Program *p) {
             a1 = *(p+1);
             break;
         case 3:
-            printf("mov instruction\n");
             a1 = *(p+1);
-            printf("a1 is set to: %d\n", a1);
             a2 = *(p+3);
-            printf("a2 is set to: %d\n", a2);
             break;
         default:
-            printf("Debug 1\n");
             segfault(vm);
             break;
     }
@@ -189,7 +175,7 @@ Program *exampleprogram(VM *vm) {
 
     if (s1) {
         // this is how we are setting the mov instruction argument stirng
-        a1    = 0x0005;
+        a1    = 0x0007;
         i1->a[0] = a1;
     }
 
@@ -232,7 +218,6 @@ Program *exampleprogram(VM *vm) {
 int main (int argc, char *argv[]){
     Program *prog;
     VM *vm;
-    int8 size;
 
     vm = virtualmachine();
   //  printf("vm = %p (sz: %d)\n", vm, sizeof(VM));
