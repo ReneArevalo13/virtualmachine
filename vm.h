@@ -108,7 +108,7 @@ static IM instrmap[] = {
 
 void error(VM *, Errorcode);
 void execute(VM *); 
-void executeinstr(VM *, Instruction *);
+void executeinstr(VM *, Program *);
 int8 map(Opcode); 
 VM *virtualmachine (void);
 

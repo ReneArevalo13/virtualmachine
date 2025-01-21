@@ -51,35 +51,37 @@ void execute(VM *vm) {
         vm $ip += size;
         pp += size;
         ip.o = *pp;
-        printf("CURRENT INSTRUCTION: %d\n", ip.o);
+       // printf("CURRENT INSTRUCTION: %d\n", ip.o);
         if ((int16)pp > (int16)brkaddr) {
             segfault(vm);
         }
         size = map(ip.o);
         printf("THE SIZE IS NOW: %d\n", size);
         printf("EXECUTING INSTRUCTION\n");
-        executeinstr(vm, &ip);
+        copy($1 &ip, $1 pp, size);
+        executeinstr(vm, pp);
         count++;
 
-    } while(count < 3);
-//   (*pp != (Opcode)hlt)
+    } while(*pp != (Opcode)hlt);
+   
    return;
 }
 
 
 void __mov(VM *vm, Opcode o, Args a1, Args a2) {
+    printf("a1 is : %d\n", a1);
+    printf("a2 is : %d\n", a2);
     vm $ax = (Reg) a1;
     return;
 }
 
-void executeinstr(VM *vm, Instruction *i) {
+void executeinstr(VM *vm, Program *p) {
     int16 size;
     Args a1, a2;
     a1 = 0;
     a2 = 0;
 
-    printf("instruction is : %d\n", i->o);
-    size = map(i->o);
+    size = map(*p);
     printf("size is %d\n", size);
     switch (size) {
         case 0:
@@ -87,11 +89,14 @@ void executeinstr(VM *vm, Instruction *i) {
         case 1:
             break;
         case 2:
-            a1 = i->a[0];
+            a1 = *(p+1);
             break;
         case 3:
-            a1 = i->a[0];
-            a2 = i->a[1];
+            printf("mov instruction\n");
+            a1 = *(p+1);
+            printf("a1 is set to: %d\n", a1);
+            a2 = *(p+3);
+            printf("a2 is set to: %d\n", a2);
             break;
         default:
             printf("Debug 1\n");
@@ -99,15 +104,15 @@ void executeinstr(VM *vm, Instruction *i) {
             break;
     }
     
-    printf("switch case: %d\n", i->o);
-    switch(i->o) {
+    switch(*p) {
         case mov:
-            __mov(vm, i->o, a1, a2);
+            __mov(vm, *p, a1, a2);
             break;
         case nop:
             break;
         case hlt:
             error(vm, SysHlt);
+
             break;
     }
     return;
@@ -124,6 +129,7 @@ void error(VM *vm, Errorcode e) {
         case SysHlt:
             fprintf(stderr, "%s\n", "System halted");
             exitcode = 0;
+            printf("ax = %.04hx\n", $i vm $ax);
             break;
         default:
             break;
@@ -160,6 +166,12 @@ Program *exampleprogram(VM *vm) {
     s2 = map(nop);
     sa1 = s1 - 1;
 
+    /* Here I allocated memory for the program
+       according to how many instructions are 
+       going to be passed. So far that is the
+       mov (and mov arg), nop, and hlt.
+    */
+
     p =  (Program *)malloc(s1+s2+sa1+s2);
     i1 = (Instruction *)malloc($i s1);
     i2 = (Instruction *)malloc( s2);
@@ -178,39 +190,31 @@ Program *exampleprogram(VM *vm) {
     if (s1) {
         // this is how we are setting the mov instruction argument stirng
         a1    = 0x0005;
+        i1->a[0] = a1;
     }
 
     p = vm->m;   // going into the vm's memory and copying there
-    printf("Beginning of program\n");
-    printf("P POINTS TO : %p\n", p);
 
-//    copy($1 p, $1 i1, 1);
-    memcpy(p, i1, 1);
+    copy($1 p, $1 i1, 1);
+    //memcpy(p, i1, 1);
     p++;
-    printf("First increment\n");
-    printf("P POINTS TO : %p\n", p);
 
     if (a1) {
-//        copy($1 p, $1 &a1, sa1);
-        memcpy(p, &a1, sa1);
+        copy($1 p, $1 &a1, sa1);
+      //  memcpy(p, &a1, sa1);
         p += sa1;
-        printf("Argument increment\n");
-        printf("P POINTS TO : %p\n", p);
     } 
 
     i2->o = nop;
-//    copy($1 p, $1 i2, 1);
-    memcpy(p, i2, 1);
- //   printf("I2 is : %d\n", i2->o);
+    copy($1 p, $1 i2, 1);
+//    memcpy(p, i2, 1);
 
     p++;
-    printf("Increment after NOP\n");
-    printf("P POINTS TO : %p\n", p);
 
     i3->o = hlt;
-    memcpy(p, i3, 1);
+    copy($1 p, $1 i3, 1);
+  //  memcpy(p, i3, 1);
     
-    printf("P POINTS TO : %p\n", p);
 
     vm->brk = (s1+sa1+s2+s2);//break line set to the offset of progam size
     vm $ip = (Reg) vm->m;
@@ -220,8 +224,8 @@ Program *exampleprogram(VM *vm) {
     free(i1);
     free(i2);
     free(i3);
+   // free(p);
 
-    printf("memory POINTS TO : %p\n", vm->m);
     return (Program *)&vm->m;
 }
 
@@ -236,7 +240,7 @@ int main (int argc, char *argv[]){
     prog = exampleprogram(vm);
     printf("prog = %p\n", prog);
 
-   // execute(vm);
+    execute(vm);
     printf("ax = %.04hx\n", $i vm $ax);
     printhex($1 prog, (map(mov) + map(nop) + map(hlt)), ' ');
     
