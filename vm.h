@@ -10,10 +10,11 @@
 #include <errno.h>
 #include "birchutils.h"
 
-#define NoErr   0x00           // 00 00
-#define SysHlt  0x01           // 00 01
-#define ErrMem  0x02           // 00 10
-#define ErrSegv 0x04           // 01 00
+#define NoErr    0x00           // 00 00
+#define SysHlt   0x01           // 00 01
+#define ErrMem   0x02           // 00 10
+#define ErrSegv  0x04           // 01 00
+#define ErrInstr 0x08          // 10 001
 
 
 typedef unsigned char int8;
@@ -98,13 +99,13 @@ struct s_vm {
     int16 brk;   // break line between stack and code segment
 };
 typedef struct s_vm VM;
-// new instruction map to handle multiple operations 0x01-0x0f (15 total)
+// new instruction map to handle multiple operations 0x08-0x0f (8 total)
 static IM instrmap[] = {
-    {mov, 0x03},
-        {0x08,0x03},{0x09,0x03},{0x0a,0x03},{0x0b,0x03},
-        {0x0c,0x03},{0x0d,0x03},{0x0e,0x03},{0x0f,0x03},
     {nop, 0x01},
-    {hlt, 0x01}
+    {hlt, 0x01},
+    {mov, 0x03},
+        {0x09,0x03},{0x0a,0x03},{0x0b,0x03},{0x0c,0x03},
+        {0x0d,0x03},{0x0e,0x03},{0x0f,0x03}
 };
 #define IMs sizeof(instrmap) / sizeof(struct s_instrmap)
  Program *exampleprogram(VM *);

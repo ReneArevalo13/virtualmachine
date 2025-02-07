@@ -61,8 +61,50 @@ void execute(VM *vm) {
 }
 
 
-void __mov(VM *vm, Opcode o, Args a1, Args a2) {
-    vm $ax = (Reg) a1;
+void __mov(VM *vm, Opcode opcode, Args a1, Args a2) {
+    int16 dst;
+    // will change XXXX
+    dst = $2 a1;
+    // a switch for all options 0x08-0x0f
+    switch(opcode) {
+        /* mov ax    1000 */
+        case 0x08:
+            vm $ax = (Reg)dst;
+            break;
+        /* mov bx    1001 */
+        case 0x09:
+            vm $bx = (Reg)dst;
+            break;
+        /* mov cx    1010 */
+        case 0x0a:
+            vm $cx = (Reg)dst;
+            break;
+        /* mov dx    1011 */
+        case 0x0b:
+            vm $dx = (Reg)dst;
+            break;
+        /* mov sp 1100 */
+        case 0x0c:
+            vm $sp = (Reg)dst;
+            break;
+        /* 1101 
+        case 0x0d:
+            vm $ax = (Reg)dst;
+            break;
+        /* 1110 
+        case 0x0e:
+            vm $ax = (Reg)dst;
+            break;
+            */
+        /* mov [addr]   1111 */
+        case 0x0f:
+            // TODO
+            break;
+        default:
+            error(vm, ErrInstr);
+    
+
+    }
     return;
 }
 
@@ -82,9 +124,20 @@ void executeinstr(VM *vm, Program *p) {
             a1 = *(p+1);
             break;
         case 3:
-            a1 = *(p+1);
-            a2 = *(p+3);
+            a1 = (
+                (((int16)*(p+2) & 0xff) << 8)
+                 | ((int16)*(p+1) & 0xff)
+                ); 
             break;
+        case 5:
+            a1 = (
+                (((int16)*(p+2) & 0xff) << 8)
+                 | ((int16)*(p+1) & 0xff)
+                ); 
+            a2 = (
+                (((int16)*(p+4) & 0xff) << 8)
+                 | ((int16)*(p+3) & 0xff)
+                ); 
         default:
             segfault(vm);
             break;
@@ -113,10 +166,14 @@ void error(VM *vm, Errorcode e) {
         case ErrSegv:
             fprintf(stderr, "%s\n", "VM Segmentation Fault");
             break;
+        case ErrInstr:
+            fprintf(stderr, "%s\n", "VM Illegal instruction");
+            break;
         case SysHlt:
             fprintf(stderr, "%s\n", "System halted");
             exitcode = 0;
-            printf("ax = %.04hx\n", $i vm $ax);
+            // CHANGING FOR TESTING 
+            printf("cx = %.04hx\n", $i vm $cx);
             break;
         default:
             break;
@@ -170,13 +227,11 @@ Program *exampleprogram(VM *vm) {
     zero($1 i2, s2);
     zero($1 i3, s2);
 
-    i1->o = mov;
-   // printf("I1 is : %d\n", i1->o);
-    //sa1 = s1 - 1;    // everything is 1 byte in our "Program instructions"
+    i1->o = 0x0a;     // mov to c register
 
     if (s1) {
         // this is how we are setting the mov instruction argument stirng
-        a1    = 0x0007;
+        a1    = 0xabcd;
         i1->a[0] = a1;
     }
 
