@@ -91,7 +91,8 @@ void executeinstr(VM *vm, Program *p) {
     }
     
     switch(*p) {
-        case mov:
+        
+        case 0x08 ... 0x0f:
             __mov(vm, *p, a1, a2);
             break;
         case nop:

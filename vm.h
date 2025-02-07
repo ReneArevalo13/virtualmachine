@@ -59,10 +59,11 @@ struct s_registers {
 };
 typedef struct s_registers Registers;
 
+
 enum e_opcode {
-    mov = 0x01,
-    nop = 0x02,
-    hlt = 0x03
+    nop = 0x01,
+    hlt = 0x02,
+    mov = 0x08     // 0x08 - 0x0f
 };
 typedef enum e_opcode Opcode;
 
@@ -97,9 +98,11 @@ struct s_vm {
     int16 brk;   // break line between stack and code segment
 };
 typedef struct s_vm VM;
-
+// new instruction map to handle multiple operations 0x01-0x0f (15 total)
 static IM instrmap[] = {
     {mov, 0x03},
+        {0x08,0x03},{0x09,0x03},{0x0a,0x03},{0x0b,0x03},
+        {0x0c,0x03},{0x0d,0x03},{0x0e,0x03},{0x0f,0x03},
     {nop, 0x01},
     {hlt, 0x01}
 };
@@ -117,3 +120,12 @@ void __mov(VM *, Opcode, Args, Args);
 int main (int, char**);
 
 
+
+/*
+   How we want to set up our instruction: 
+         v this bit is set to one to indicate a mov instruction
+         This will give us a possibility between 8-15
+    0000 1000 mov eax
+    0000 0000
+    0000 0005
+*/
