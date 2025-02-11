@@ -35,7 +35,12 @@ typedef unsigned long long int int64;
 #define $dx ->c.r.dx
 #define $sp ->c.r.sp
 #define $ip ->c.r.ip
+#define $flags ->c.r.flags
 
+#define equal(x)        (!!((x $flags & 0x08) >> 3))
+#define gt(x)           (!!((x $flags & 0x04) >> 2))
+#define higher(x)       (!!((x $flags & 0x02) >> 1))
+#define lower(x)        (!!((x $flags & 0x01)))
 #define segfault(x)       error((x), ErrSegv)
 /*
    Will be making a 16 bit computer.
@@ -47,6 +52,11 @@ typedef unsigned long long int int64;
    Stack pointer, sp.
    Instruction pointer, ip.
    other ports to come.
+
+   Adding a FLAGS register to hold some
+   boolean values. Will hold zero flag, 
+   carry flag (for floating point ops),
+   and high and low register. Also comparison flag.
 */
 typedef unsigned short int Reg;
 
@@ -57,6 +67,14 @@ struct s_registers {
     Reg dx;
     Reg sp;
     Reg ip;
+    Reg flags;
+    /*
+    Flags we will be holding:
+    P1: E   (equality)
+    P2: G   (greater than, for comparison)
+    P3: H   (high register)
+    P4: L   (low register)
+    */
 };
 typedef struct s_registers Registers;
 

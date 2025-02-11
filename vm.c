@@ -114,6 +114,9 @@ void executeinstr(VM *vm, Program *p) {
     a1 = 0;
     a2 = 0;
 
+    /* Important to note the endianess of our data 
+       and how it's stored. 
+    */
     size = map(*p);
     switch (size) {
         case 0:
@@ -174,6 +177,14 @@ void error(VM *vm, Errorcode e) {
             exitcode = 0;
             // CHANGING FOR TESTING 
             printf("cx = %.04hx\n", $i vm $cx);
+            vm $flags = 0x04;
+            if (equal(vm)) {
+                printf("Equal flag is set\n");
+            } else {
+                printf("E flag not set\n");
+            }
+
+
             break;
         default:
             break;
@@ -231,7 +242,7 @@ Program *exampleprogram(VM *vm) {
 
     if (s1) {
         // this is how we are setting the mov instruction argument stirng
-        a1    = 0xabcd;
+        a1    = 0xfbcd;
         i1->a[0] = a1;
     }
 
