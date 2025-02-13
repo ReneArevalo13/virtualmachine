@@ -61,31 +61,91 @@ void execute(VM *vm) {
 }
 
 
+void __ste(VM *vm, Opcode opcode, Args a1, Args a2) {
+    vm $flags |= 0x08;
+}
+void __stg(VM *vm, Opcode opcode, Args a1, Args a2) {
+    vm $flags |= 0x04;
+}
+void __sth(VM *vm, Opcode opcode, Args a1, Args a2) {
+    vm $flags |= 0x02;
+}
+void __stl(VM *vm, Opcode opcode, Args a1, Args a2) {
+    vm $flags |= 0x01;
+}
+void __cle(VM *vm, Opcode opcode, Args a1, Args a2) {
+    //    1011   (flag set)
+    //    0111   (mask) 0x07
+    //    0011   ( & result) flag is cleared
+    vm $flags |= 0x07;
+}
+void __clg(VM *vm, Opcode opcode, Args a1, Args a2) {
+    vm $flags |= 0x0c;
+}
+void __clh(VM *vm, Opcode opcode, Args a1, Args a2) {
+    vm $flags |= 0x0d;
+}
+void __cll(VM *vm, Opcode opcode, Args a1, Args a2) {
+    vm $flags |= 0x0e;
+}
 void __mov(VM *vm, Opcode opcode, Args a1, Args a2) {
-    int16 dst;
+    int16 dst, dstl, dsth;
     // will change XXXX
     dst = $2 a1;
+    // splits our number into the high and low respectively
+    dstl = ((($2 a1) & 0x03) >> 2);
+    dsth = ((($2 a1) & 0x0c) >> 2);
     // a switch for all options 0x08-0x0f
     switch(opcode) {
         /* mov ax    1000 */
         case 0x08:
-            vm $ax = (Reg)dst;
+            if (higher(vm)) {
+                vm $ax = (Reg)dsth; 
+            } else if (lower(vm)) {
+                vm $ax = (Reg)dshl;
+            } else {
+                vm $ax = (Reg)dst;
+            }
             break;
         /* mov bx    1001 */
         case 0x09:
-            vm $bx = (Reg)dst;
+            if (higher(vm)) {
+                vm $bx = (Reg)dsth; 
+            } else if (lower(vm)) {
+                vm $bx = (Reg)dstl;
+            } else {
+                vm $bx = (Reg)dst;
+            }
             break;
         /* mov cx    1010 */
         case 0x0a:
-            vm $cx = (Reg)dst;
+            if (higher(vm)) {
+                vm $cx = (Reg)dsth; 
+            } else if (lower(vm)) {
+                vm $cx = (Reg)dstl;
+            } else {
+                vm $cx = (Reg)dst;
+            }
             break;
         /* mov dx    1011 */
         case 0x0b:
-            vm $dx = (Reg)dst;
+            if (higher(vm)) {
+                vm $dx = (Reg)dsth; 
+            } else if (lower(vm)) {
+                vm $dx = (Reg)dstl;
+            } else {
+                vm $dx = (Reg)dst;
+            } 
             break;
         /* mov sp 1100 */
         case 0x0c:
-            vm $sp = (Reg)dst;
+            if (higher(vm)) {
+                vm $sp = (Reg)dsth; 
+            } else if (lower(vm)) {
+                vm $sp = (Reg)dstl;
+            } else {
+                vm $sp = (Reg)dst;
+            } 
             break;
         /* 1101 
         case 0x0d:
@@ -155,8 +215,18 @@ void executeinstr(VM *vm, Program *p) {
             break;
         case hlt:
             error(vm, SysHlt);
-
             break;
+        /* keeping the arguments in the function signature
+           for consistency amongst all our operation funcs.
+        */
+        case ste:    __ste(vm, (Opcode)*p, a1, a2); break;
+        case stg:    __stg(vm, (Opcode)*p, a1, a2); break;
+        case stl:    __sth(vm, (Opcode)*p, a1, a2); break;
+        case sth:    __stl(vm, (Opcode)*p, a1, a2); break;
+        case cle:    __cle(vm, (Opcode)*p, a1, a2); break;
+        case clg:    __clg(vm, (Opcode)*p, a1, a2); break;
+        case cll:    __clh(vm, (Opcode)*p, a1, a2); break;
+        case clh:    __cll(vm, (Opcode)*p, a1, a2); break;
     }
     return;
 }
@@ -183,7 +253,11 @@ void error(VM *vm, Errorcode e) {
             } else {
                 printf("E flag not set\n");
             }
-
+            if (gt(vm)) {
+                printf("greater flag is set\n");
+            } else {
+                printf("G flag not set\n");
+            }
 
             break;
         default:

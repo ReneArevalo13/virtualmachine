@@ -79,23 +79,39 @@ struct s_registers {
 typedef struct s_registers Registers;
 
 
+/* add opcodes for flag setting in the format
+    st(set) and cl(clear)
+*/
+
 enum e_opcode {
     nop = 0x01,
     hlt = 0x02,
-    mov = 0x08     // 0x08 - 0x0f
+    mov = 0x08,      // 0x08 - 0x0f
+    ste = 0x10,
+    cle = 0x11,
+    stg = 0x12,
+    clg = 0x13,
+    sth = 0x14,
+    clh = 0x15,
+    stl = 0x16,
+    cll = 0x017,
+    /*
+    resv1 = 0x18,
+    resv2 = 0x19
+    */
 };
 typedef enum e_opcode Opcode;
 
 struct s_instrmap {
     Opcode o;
     int8 s;
-};
-typedef struct s_instrmap IM;
+    };
+    typedef struct s_instrmap IM;
 
-struct s_cpu {
-    Registers r;
-};
-typedef struct s_cpu CPU;
+    struct s_cpu {
+        Registers r;
+    };
+    typedef struct s_cpu CPU;
 
 typedef int16 Args;
 
@@ -123,7 +139,15 @@ static IM instrmap[] = {
     {hlt, 0x01},
     {mov, 0x03},
         {0x09,0x03},{0x0a,0x03},{0x0b,0x03},{0x0c,0x03},
-        {0x0d,0x03},{0x0e,0x03},{0x0f,0x03}
+        {0x0d,0x03},{0x0e,0x03},{0x0f,0x03},
+    {ste, 0x01},
+    {stg, 0x01},
+    {sth, 0x01},
+    {stl, 0x01},
+    {cle, 0x01},
+    {clg, 0x01},
+    {clh, 0x01},
+    {cll, 0x01}
 };
 #define IMs sizeof(instrmap) / sizeof(struct s_instrmap)
  Program *exampleprogram(VM *);
