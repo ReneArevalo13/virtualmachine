@@ -15,6 +15,7 @@ VM *virtualmachine() {
         return (VM *)0;
     }
     zero($1 p, size);
+  //  p $flags = (Reg)-1;
 
         return p;
 }
@@ -77,16 +78,16 @@ void __cle(VM *vm, Opcode opcode, Args a1, Args a2) {
     //    1011   (flag set)
     //    0111   (mask) 0x07
     //    0011   ( & result) flag is cleared
-    vm $flags |= 0x07;
+    vm $flags &= 0x07;
 }
 void __clg(VM *vm, Opcode opcode, Args a1, Args a2) {
-    vm $flags |= 0x0c;
+    vm $flags &= 0x0b;
 }
 void __clh(VM *vm, Opcode opcode, Args a1, Args a2) {
-    vm $flags |= 0x0d;
+    vm $flags &= 0x0d;
 }
 void __cll(VM *vm, Opcode opcode, Args a1, Args a2) {
-    vm $flags |= 0x0e;
+    vm $flags &= 0x0e;
 }
 void __mov(VM *vm, Opcode opcode, Args a1, Args a2) {
     int16 dst, dstl, dsth;
@@ -102,7 +103,7 @@ void __mov(VM *vm, Opcode opcode, Args a1, Args a2) {
             if (higher(vm)) {
                 vm $ax = (Reg)dsth; 
             } else if (lower(vm)) {
-                vm $ax = (Reg)dshl;
+                vm $ax = (Reg)dstl;
             } else {
                 vm $ax = (Reg)dst;
             }
@@ -221,12 +222,12 @@ void executeinstr(VM *vm, Program *p) {
         */
         case ste:    __ste(vm, (Opcode)*p, a1, a2); break;
         case stg:    __stg(vm, (Opcode)*p, a1, a2); break;
-        case stl:    __sth(vm, (Opcode)*p, a1, a2); break;
-        case sth:    __stl(vm, (Opcode)*p, a1, a2); break;
+        case sth:    __sth(vm, (Opcode)*p, a1, a2); break;
+        case stl:    __stl(vm, (Opcode)*p, a1, a2); break;
         case cle:    __cle(vm, (Opcode)*p, a1, a2); break;
         case clg:    __clg(vm, (Opcode)*p, a1, a2); break;
-        case cll:    __clh(vm, (Opcode)*p, a1, a2); break;
-        case clh:    __cll(vm, (Opcode)*p, a1, a2); break;
+        case clh:    __clh(vm, (Opcode)*p, a1, a2); break;
+        case cll:    __cll(vm, (Opcode)*p, a1, a2); break;
     }
     return;
 }
@@ -246,19 +247,27 @@ void error(VM *vm, Errorcode e) {
             fprintf(stderr, "%s\n", "System halted");
             exitcode = 0;
             // CHANGING FOR TESTING 
-            printf("cx = %.04hx\n", $i vm $cx);
-            vm $flags = 0x04;
+            printf("flags = %.04hx\n", $i vm $flags);
             if (equal(vm)) {
                 printf("Equal flag is set\n");
             } else {
-                printf("E flag not set\n");
+                printf("E flag is not set\n");
             }
             if (gt(vm)) {
-                printf("greater flag is set\n");
+                printf("Greater than flag is set\n");
             } else {
                 printf("G flag not set\n");
             }
-
+            if (higher(vm)) {
+                printf("Higher than flag is set\n");
+            } else {
+                printf("H flag not set\n");
+            }
+            if (lower(vm)) {
+                printf("Lower than flag is set\n");
+            } else {
+                printf("L flag not set\n");
+            }
             break;
         default:
             break;
@@ -286,7 +295,7 @@ int8 map(Opcode o){
 
 Program *exampleprogram(VM *vm) {
     Program *p;
-    Instruction *i1, *i2, *i3;
+    Instruction *i1, *i2, *i3, *i4;
     int16 s1, s2, sa1;
     Args a1;
 
@@ -305,12 +314,14 @@ Program *exampleprogram(VM *vm) {
     i1 = (Instruction *)malloc($i s1);
     i2 = (Instruction *)malloc( s2);
     i3 = (Instruction *)malloc( s2);
+    i4 = (Instruction *)malloc( s2);
 
     assert(i1 && i2 && i3);
 
     zero($1 i1, s1);
     zero($1 i2, s2);
     zero($1 i3, s2);
+    zero($1 i4, s2);
 
     i1->o = 0x0a;     // mov to c register
 
@@ -323,27 +334,26 @@ Program *exampleprogram(VM *vm) {
     p = vm->m;   // going into the vm's memory and copying there
 
     copy($1 p, $1 i1, 1);
-    //memcpy(p, i1, 1);
     p++;
 
     if (a1) {
         copy($1 p, $1 &a1, sa1);
-      //  memcpy(p, &a1, sa1);
         p += sa1;
     } 
 
-    i2->o = nop;
+    i2->o = ste;
     copy($1 p, $1 i2, 1);
-//    memcpy(p, i2, 1);
 
     p++;
-
-    i3->o = hlt;
+    i3->o = stg;
     copy($1 p, $1 i3, 1);
-  //  memcpy(p, i3, 1);
+
+    p++;
+    i4->o = hlt;
+    copy($1 p, $1 i4, 1);
     
 
-    vm->brk = (s1+sa1+s2+s2);//break line set to the offset of progam size
+    vm->brk = (s1+sa1+s2+s2+s2);//break line set to the offset of progam size
     vm $ip = (Reg) vm->m;
 
     vm $sp = (Reg) -1;
@@ -351,6 +361,7 @@ Program *exampleprogram(VM *vm) {
     free(i1);
     free(i2);
     free(i3);
+    free(i4);
    // free(p);
 
     return (Program *)&vm->m;
