@@ -33,8 +33,7 @@ void execute(VM *vm) {
     brkaddr = (int16)vm->m + vm->brk;
 
     size = 0;
-
-    /* 
+   /* 
     Our instruction format:
     instr1 arg1 instr2 instr3
     mov ax, 0x05; nop; hlt;
@@ -90,84 +89,64 @@ void __cll(VM *vm, Opcode opcode, Args a1, Args a2) {
     vm $flags &= 0x0e;
 }
 void __mov(VM *vm, Opcode opcode, Args a1, Args a2) {
-    int16 dst, dstl, dsth;
-    // will change XXXX
+    int16 dst;
     dst = $2 a1;
-    // splits our number into the high and low respectively
-    dstl = ((($2 a1) & 0x03) >> 2);
-    dsth = ((($2 a1) & 0x0c) >> 2);
-    // a switch for all options 0x08-0x0f
+    if (higher(vm) && lower(vm)) {
+        error(vm, ErrInstr);
+    }
+
     switch(opcode) {
-        /* mov ax    1000 */
+        // mov ax
         case 0x08:
             if (higher(vm)) {
-                vm $ax = (Reg)dsth; 
+                vm $ax = (((Reg)a1 <<8) | (vm $ax & 0xFF));
             } else if (lower(vm)) {
-                vm $ax = (Reg)dstl;
+                vm $ax = ((Reg)a1 | (vm $ax & 0xFF00));
             } else {
-                vm $ax = (Reg)dst;
+                vm $ax = (Reg)a1;
             }
             break;
-        /* mov bx    1001 */
+        // mov bx
         case 0x09:
-            if (higher(vm)) {
-                vm $bx = (Reg)dsth; 
+        if (higher(vm)) {
+                vm $bx = (((Reg)a1 <<8) | (vm $bx & 0xFF));
             } else if (lower(vm)) {
-                vm $bx = (Reg)dstl;
+                vm $bx = ((Reg)a1 | (vm $bx & 0xFF00));
             } else {
-                vm $bx = (Reg)dst;
+                vm $bx = (Reg)a1;
             }
             break;
-        /* mov cx    1010 */
+
+        // mov cx
         case 0x0a:
-            if (higher(vm)) {
-                vm $cx = (Reg)dsth; 
+        if (higher(vm)) {
+                vm $cx = (((Reg)a1 <<8) | (vm $cx & 0xFF));
             } else if (lower(vm)) {
-                vm $cx = (Reg)dstl;
+                vm $cx = ((Reg)a1 | (vm $cx & 0xFF00));
             } else {
-                vm $cx = (Reg)dst;
+                vm $cx = (Reg)a1;
             }
             break;
-        /* mov dx    1011 */
+        // mov dx
         case 0x0b:
-            if (higher(vm)) {
-                vm $dx = (Reg)dsth; 
+        if (higher(vm)) {
+                vm $dx = (((Reg)a1 <<8) | (vm $dx & 0xFF));
             } else if (lower(vm)) {
-                vm $dx = (Reg)dstl;
+                vm $dx = ((Reg)a1 | (vm $dx & 0xFF00));
             } else {
-                vm $dx = (Reg)dst;
-            } 
+                vm $dx = (Reg)a1;
+            }
             break;
-        /* mov sp 1100 */
+
+        // sp
         case 0x0c:
-            if (higher(vm)) {
-                vm $sp = (Reg)dsth; 
-            } else if (lower(vm)) {
-                vm $sp = (Reg)dstl;
-            } else {
-                vm $sp = (Reg)dst;
-            } 
-            break;
-        /* 1101 
-        case 0x0d:
-            vm $ax = (Reg)dst;
-            break;
-        /* 1110 
-        case 0x0e:
-            vm $ax = (Reg)dst;
-            break;
-            */
-        /* mov [addr]   1111 */
-        case 0x0f:
-            // TODO
-            break;
+            vm $sp = (Reg)dst;
         default:
             error(vm, ErrInstr);
-    
 
     }
     return;
-}
+} 
 
 void executeinstr(VM *vm, Program *p) {
     int16 size;
@@ -247,7 +226,7 @@ void error(VM *vm, Errorcode e) {
             fprintf(stderr, "%s\n", "System halted");
             exitcode = 0;
             // CHANGING FOR TESTING 
-            printf("flags = %.04hx\n", $i vm $flags);
+            printf("ax= %.04hx\n", $i vm $ax);
             if (equal(vm)) {
                 printf("Equal flag is set\n");
             } else {
@@ -295,7 +274,7 @@ int8 map(Opcode o){
 
 Program *exampleprogram(VM *vm) {
     Program *p;
-    Instruction *i1, *i2, *i3, *i4;
+    Instruction *i0,*i1, *i2, *i3, *i4;
     int16 s1, s2, sa1;
     Args a1;
 
@@ -311,6 +290,7 @@ Program *exampleprogram(VM *vm) {
     */
 
     p =  (Program *)malloc(s1+s2+sa1+s2);
+    i0 = (Instruction *)malloc(s2);
     i1 = (Instruction *)malloc($i s1);
     i2 = (Instruction *)malloc( s2);
     i3 = (Instruction *)malloc( s2);
@@ -318,20 +298,27 @@ Program *exampleprogram(VM *vm) {
 
     assert(i1 && i2 && i3);
 
+    zero($1 i0, s1);
     zero($1 i1, s1);
     zero($1 i2, s2);
     zero($1 i3, s2);
     zero($1 i4, s2);
 
-    i1->o = 0x0a;     // mov to c register
+    i0->o = sth;
+    p = vm->m;
+    copy($1 p, $1 i0, 1);
+    p++;
+
+    vm $ax = 1;
+    i1->o = 0x08;     // mov to a register
 
     if (s1) {
         // this is how we are setting the mov instruction argument stirng
-        a1    = 0xfbcd;
+        a1    = 0x02;
         i1->a[0] = a1;
     }
 
-    p = vm->m;   // going into the vm's memory and copying there
+    //p = vm->m;   // going into the vm's memory and copying there
 
     copy($1 p, $1 i1, 1);
     p++;
@@ -341,11 +328,11 @@ Program *exampleprogram(VM *vm) {
         p += sa1;
     } 
 
-    i2->o = ste;
+    i2->o = nop; 
     copy($1 p, $1 i2, 1);
 
     p++;
-    i3->o = stg;
+    i3->o = ste;
     copy($1 p, $1 i3, 1);
 
     p++;
@@ -383,3 +370,4 @@ int main (int argc, char *argv[]){
     
     return 0;
 }
+    
