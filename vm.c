@@ -3,6 +3,7 @@
 #include "vm.h"
 #include "birchutils.h"
 #include <string.h>
+#include <stdarg.h>
 
 VM *virtualmachine() {
     VM *p;
@@ -103,6 +104,8 @@ void __mov(VM *vm, Opcode opcode, Args a1, Args a2) {
             } else if (lower(vm)) {
                 vm $ax = ((Reg)a1 | (vm $ax & 0xFF00));
             } else {
+                printf("moving into ax!!!\n");
+                printf("arg is %d\n", a2);
                 vm $ax = (Reg)a1;
             }
             break;
@@ -143,7 +146,6 @@ void __mov(VM *vm, Opcode opcode, Args a1, Args a2) {
             vm $sp = (Reg)dst;
         default:
             error(vm, ErrInstr);
-
     }
     return;
 } 
@@ -272,7 +274,30 @@ int8 map(Opcode o){
     return ret; 
 }
 
-Program *exampleprogram(VM *vm) {
+Program *exampleprogram(VM *vm, ...) {
+   Program *p;
+   va_list ap;
+
+   va_start(ap, vm);
+   p = va_arg(ap, Program*);
+   printf("0x%.02hhx\n", $c *p);
+   va_end(ap);
+   return p; 
+}
+
+Program *i(Instruction *i) {
+    Program *p;
+    int8 size;
+
+    size = map(i->o);
+    p = (Program *)malloc($i size);
+    assert(p);
+    copy(p, $1 i, size);
+
+    return p;
+}
+
+Program *exampleprogram2(VM *vm) {
     Program *p;
     Instruction *i0,*i1, *i2, *i3, *i4;
     int16 s1, s2, sa1;
@@ -358,10 +383,21 @@ int main (int argc, char *argv[]){
     Program *prog;
     VM *vm;
 
-    vm = virtualmachine();
-  //  printf("vm = %p (sz: %d)\n", vm, sizeof(VM));
+    Instruction *instr, *instr2;
+    instr = (Instruction *)malloc(3);
+    instr2 = (Instruction *)malloc(1);
+    zero($1 instr, 3);
+    zero($1 instr2, 1);
+    instr->o = mov;
+    instr->a[1] = 5;
 
-    prog = exampleprogram(vm);
+    instr2->o = hlt;
+
+    vm = virtualmachine();
+    exampleprogram(vm, i(instr));
+    exit(0);
+//    prog = exampleprogram(vm, i(instr), i(instr2));
+   // prog = exampleprogram2(vm);
     printf("prog = %p\n", prog);
 
     execute(vm);
