@@ -89,6 +89,7 @@ void __clh(VM *vm, Opcode opcode, Args a1, Args a2) {
 void __cll(VM *vm, Opcode opcode, Args a1, Args a2) {
     vm $flags &= 0x0e;
 }
+
 void __mov(VM *vm, Opcode opcode, Args a1, Args a2) {
     int16 dst;
     dst = $2 a1;
@@ -104,8 +105,6 @@ void __mov(VM *vm, Opcode opcode, Args a1, Args a2) {
             } else if (lower(vm)) {
                 vm $ax = ((Reg)a1 | (vm $ax & 0xFF00));
             } else {
-                printf("moving into ax!!!\n");
-                printf("arg is %d\n", a2);
                 vm $ax = (Reg)a1;
             }
             break;
@@ -160,6 +159,7 @@ void executeinstr(VM *vm, Program *p) {
        and how it's stored. 
     */
     size = map(*p);
+  //  printf("execute size is %d\n", size);
     switch (size) {
         case 0:
             break;
@@ -173,6 +173,7 @@ void executeinstr(VM *vm, Program *p) {
                 (((int16)*(p+2) & 0xff) << 8)
                  | ((int16)*(p+1) & 0xff)
                 ); 
+            
             break;
         case 5:
             a1 = (
@@ -229,6 +230,7 @@ void error(VM *vm, Errorcode e) {
             exitcode = 0;
             // CHANGING FOR TESTING 
             printf("ax= %.04hx\n", $i vm $ax);
+             
             if (equal(vm)) {
                 printf("Equal flag is set\n");
             } else {
@@ -250,6 +252,7 @@ void error(VM *vm, Errorcode e) {
                 printf("L flag not set\n");
             }
             break;
+            
         default:
             break;
     }
@@ -275,14 +278,63 @@ int8 map(Opcode o){
 }
 
 Program *exampleprogram(VM *vm, ...) {
-   Program *p;
+   Program *p, *instr;
    va_list ap;
+   Opcode opc;
+   int8 size;
 
    va_start(ap, vm);
-   p = va_arg(ap, Program*);
-   printf("0x%.02hhx\n", $c *p);
+   p = vm->m;
+   do {
+       instr = va_arg(ap, Program*);
+       opc = (Opcode)*instr;
+      // printf("I 0x%.02hhx\n", $c *instr);
+       size = map(opc);
+       copy($1 p, $1 instr, size);
+       p += size;
+       vm->brk += size;
+       //printf("P 0x%.02hhx\n", $c *p);
+   } while(opc != hlt);
+
    va_end(ap);
    return p; 
+}
+Instruction *i0(Opcode op) {
+    Instruction *i;
+    int8 size;
+
+    size = map(op);
+    i = (Instruction *)malloc(size);
+    assert(i);
+    zero($1 i, size);
+    i->o = op;
+    return i;
+}
+Instruction *i1(Opcode op, Args a1) {
+    Instruction *i;
+    int8 size;
+
+    size = map(op);
+    i = (Instruction *)malloc(size);
+    assert(i);
+    zero($1 i, size);
+    i->o = op;
+    i->a[0] = a1;
+    return i;
+}
+
+Instruction *i2(Opcode op, Args a1, Args a2) {
+    Instruction *i;
+    int8 size;
+
+    size = map(op);
+    i = (Instruction *)malloc(size);
+    assert(i);
+    zero($1 i, size);
+    i->o = op;
+    i->a[0] = a1;
+    i->a[1] = a2;
+    return i;
 }
 
 Program *i(Instruction *i) {
@@ -293,6 +345,7 @@ Program *i(Instruction *i) {
     p = (Program *)malloc($i size);
     assert(p);
     copy(p, $1 i, size);
+    copy((p+1), $1 i->a, (size-1));
 
     return p;
 }
@@ -329,17 +382,17 @@ Program *exampleprogram2(VM *vm) {
     zero($1 i3, s2);
     zero($1 i4, s2);
 
-    i0->o = sth;
+    i0->o = nop;
     p = vm->m;
     copy($1 p, $1 i0, 1);
     p++;
 
     vm $ax = 1;
-    i1->o = 0x08;     // mov to a register
+    i1->o = mov;     // mov to a register
 
     if (s1) {
         // this is how we are setting the mov instruction argument stirng
-        a1    = 0x02;
+        a1 = 0x05;
         i1->a[0] = a1;
     }
 
@@ -357,7 +410,7 @@ Program *exampleprogram2(VM *vm) {
     copy($1 p, $1 i2, 1);
 
     p++;
-    i3->o = ste;
+    i3->o = nop;
     copy($1 p, $1 i3, 1);
 
     p++;
@@ -383,23 +436,16 @@ int main (int argc, char *argv[]){
     Program *prog;
     VM *vm;
 
-    Instruction *instr, *instr2;
-    instr = (Instruction *)malloc(3);
-    instr2 = (Instruction *)malloc(1);
-    zero($1 instr, 3);
-    zero($1 instr2, 1);
-    instr->o = mov;
-    instr->a[1] = 5;
-
-    instr2->o = hlt;
-
+    
     vm = virtualmachine();
-    exampleprogram(vm, i(instr));
-    exit(0);
-//    prog = exampleprogram(vm, i(instr), i(instr2));
+  //  exampleprogram(vm, i(instr));
+   // exit(0);
+    prog = exampleprogram(vm, 
+           i(i1(mov, 0x06)), i(i0(ste)), i(i0(hlt)));
    // prog = exampleprogram2(vm);
-    printf("prog = %p\n", prog);
-
+  //  printf("prog = %p\n", prog);
+    
+    
     execute(vm);
     printf("ax = %.04hx\n", $i vm $ax);
     printhex($1 prog, (map(mov) + map(nop) + map(hlt)), ' ');

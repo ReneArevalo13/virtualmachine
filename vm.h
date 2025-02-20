@@ -14,7 +14,7 @@
 #define SysHlt   0x01           // 00 01
 #define ErrMem   0x02           // 00 10
 #define ErrSegv  0x04           // 01 00
-#define ErrInstr 0x08          // 10 001
+#define ErrInstr 0x08           // 10 001
 
 
 typedef unsigned char int8;
@@ -58,6 +58,9 @@ typedef unsigned long long int int64;
    carry flag (for floating point ops),
    and high and low register. Also comparison flag.
 */
+    
+
+
 typedef unsigned short int Reg;
 
 struct s_registers {
@@ -150,8 +153,10 @@ static IM instrmap[] = {
     {cll, 0x01}
 };
 #define IMs sizeof(instrmap) / sizeof(struct s_instrmap)
- Program *exampleprogram(VM *);
+ Program *exampleprogram2(VM *);
 
+Program *exampleprogram(VM *, ...);
+Program *i(Instruction*);
 void error(VM *, Errorcode);
 void execute(VM *); 
 void executeinstr(VM *, Program *);
